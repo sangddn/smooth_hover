@@ -1,6 +1,6 @@
 name: smooth_hover
-description: "Animated hover ink and tooltips for Flutter widgets."
-version: 0.0.1
+description: "A Flutter package that provides smooth, physics-based hover effects and tooltips for widgets, enhancing desktop and web interactions with fluid animations."
+version: 0.0.2
 homepage: https://github.com/sangddn/smooth_hover
 repository: https://github.com/sangddn/smooth_hover
 issue_tracker: https://github.com/sangddn/smooth_hover/issues
