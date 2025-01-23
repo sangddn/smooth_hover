@@ -31,24 +31,36 @@ class MyHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SmoothHoverScope(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 24.0,
-            children: <Widget>[
-              _HoverObject(0),
-              _HoverObject(1),
-              _HoverObject(2),
-            ],
-          ),
+        child: Row(
+          children: [
+            Expanded(child: _Tiles()),
+            Expanded(child: _MenuButtons())
+          ],
         ),
       ),
     );
   }
 }
 
-class _HoverObject extends StatelessWidget {
-  const _HoverObject(this.index);
+class _Tiles extends StatelessWidget {
+  const _Tiles();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      spacing: 24.0,
+      children: <Widget>[
+        _Tile(0),
+        _Tile(1),
+        _Tile(2),
+      ],
+    );
+  }
+}
+
+class _Tile extends StatelessWidget {
+  const _Tile(this.index);
 
   final int index;
 
@@ -103,6 +115,67 @@ class _HoverObject extends StatelessWidget {
               SizedBox(width: 16),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuButtons extends StatelessWidget {
+  const _MenuButtons();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(16.0)),
+          border: Border.all(width: 0.75, color: Colors.grey),
+        ),
+        constraints: BoxConstraints(maxWidth: 300.0),
+        margin: EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(12.0),
+        child: Column(
+          spacing: 2.0,
+          children: [
+            _MenuButton(CupertinoIcons.home, 'Home'),
+            _MenuButton(CupertinoIcons.settings, 'Settings'),
+            _MenuButton(CupertinoIcons.bell, 'Notifications'),
+            _MenuButton(CupertinoIcons.person, 'Profile'),
+            _MenuButton(CupertinoIcons.info, 'About'),
+            _MenuButton(CupertinoIcons.question, 'Help'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuButton extends StatelessWidget {
+  const _MenuButton(this.icon, this.label);
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return SmoothHover(
+      inkPhysics: Spring.swift,
+      tooltipText: 'Tooltip for $label',
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Row(
+          children: [
+            Icon(icon, size: 16.0),
+            SizedBox(width: 8.0),
+            Text(label),
+            Spacer(),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: 16.0,
+              color: Colors.grey,
+            ),
+          ],
         ),
       ),
     );

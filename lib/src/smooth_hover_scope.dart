@@ -48,7 +48,12 @@ class SmoothHoverScope extends StatefulWidget {
   const SmoothHoverScope({
     super.key,
     this.decoration,
-    this.physics,
+    this.inkPhysics,
+    this.inkAnimationDuration,
+    this.tooltipDecoration,
+    this.tooltipPhysics,
+    this.tooltipAnimationDuration,
+    this.tooltipDelay,
     required this.child,
   });
 
@@ -58,11 +63,41 @@ class SmoothHoverScope extends StatefulWidget {
   /// [SmoothHover.inkDecoration].
   final Decoration? decoration;
 
-  /// The default physics configuration for hover animations within this scope.
+  /// The default physics configuration for hover ink animations within this scope.
   ///
   /// Individual [SmoothHover] widgets can override this by providing their own
   /// [SmoothHover.inkPhysics].
-  final Physics? physics;
+  final Physics? inkPhysics;
+
+  /// The default physics configuration for hover tooltip animations within this scope.
+  ///
+  /// Individual [SmoothHover] widgets can override this by providing their own
+  /// [SmoothHover.tooltipPhysics].
+  final Physics? tooltipPhysics;
+
+  /// The default decoration to apply to hover tooltip effects within this scope.
+  ///
+  /// Individual [SmoothHover] widgets can override this by providing their own
+  /// [SmoothHover.tooltipDecoration].
+  final Decoration? tooltipDecoration;
+
+  /// The default duration of the hover ink animation within this scope.
+  ///
+  /// Individual [SmoothHover] widgets can override this by providing their own
+  /// [SmoothHover.inkAnimationDuration].
+  final Duration? inkAnimationDuration;
+
+  /// The default duration of the hover tooltip animation within this scope.
+  ///
+  /// Individual [SmoothHover] widgets can override this by providing their own
+  /// [SmoothHover.tooltipAnimationDuration].
+  final Duration? tooltipAnimationDuration;
+
+  /// The default delay of the hover tooltip animation within this scope.
+  ///
+  /// Individual [SmoothHover] widgets can override this by providing their own
+  /// [SmoothHover.tooltipDelay].
+  final Duration? tooltipDelay;
 
   /// The widget below this widget in the tree.
   ///
@@ -82,12 +117,24 @@ class SmoothHoverScope extends StatefulWidget {
         .state;
   }
 
-  /// The default decoration used when no decoration is provided.
+  /// The default ink decoration used when no decoration is provided.
   ///
   /// This applies a subtle black overlay with rounded corners.
-  static final defaultDecoration = BoxDecoration(
+  static final defaultInkDecoration = BoxDecoration(
     color: Color.from(alpha: 0.05, red: 0.0, green: 0.0, blue: 0.0),
     borderRadius: BorderRadius.circular(8.0),
+  );
+
+  /// The default tooltip decoration used when no decoration is provided.
+  static final defaultTooltipDecoration = BoxDecoration(
+    color: Color.fromARGB(255, 250, 250, 250),
+    borderRadius: BorderRadius.circular(8.0),
+    boxShadow: [
+      BoxShadow(
+        color: Color.fromARGB(150, 200, 200, 200),
+        blurRadius: 16.0,
+      ),
+    ],
   );
 
   /// The default physics configuration used when no physics is provided.
@@ -109,19 +156,25 @@ class SmoothHoverScope extends StatefulWidget {
 class SmoothHoverScopeState extends State<SmoothHoverScope> {
   /// The currently hovered widget's state, if any.
   SmoothHoverState? hoveredWidget;
-  StateSetter? _setInkState;
+  StateSetter? _setInkState, _setTooltipState;
 
   /// Called when a [SmoothHover] widget enters the hover state.
   ///
   /// This updates the scope to show the hover ink effect for the newly hovered widget.
-  void onHover(SmoothHoverState state) =>
-      _setInkState?.call(() => hoveredWidget = state);
+  void onHover(SmoothHoverState state) {
+    hoveredWidget = state;
+    _setInkState?.call(() {});
+    _setTooltipState?.call(() {});
+  }
 
   /// Called when a [SmoothHover] widget exits the hover state.
   ///
   /// This updates the scope to remove the hover ink effect.
-  void onHoverExit(SmoothHoverState state) =>
-      _setInkState?.call(() => hoveredWidget = null);
+  void onHoverExit(SmoothHoverState state) {
+    hoveredWidget = null;
+    _setInkState?.call(() {});
+    _setTooltipState?.call(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,18 +187,44 @@ class SmoothHoverScopeState extends State<SmoothHoverScope> {
           final target = hoveredWidget?.offset;
           final effectiveDecoration = hoveredWidget?.widget.inkDecoration ??
               widget.decoration ??
-              SmoothHoverScope.defaultDecoration;
+              SmoothHoverScope.defaultInkDecoration;
           final effectivePhysics = hoveredWidget?.widget.inkPhysics ??
-              widget.physics ??
+              widget.inkPhysics ??
               SmoothHoverScope.defaultPhysics;
           return _Ink(
             size: size,
             target: target,
             decoration: effectiveDecoration,
             physics: effectivePhysics,
+            animationDuration: hoveredWidget?.widget.inkAnimationDuration ??
+                widget.inkAnimationDuration,
           );
         }),
         _SmoothHoverScope(state: this, widget: widget),
+        StatefulBuilder(builder: (context, setTooltipState) {
+          _setTooltipState = setTooltipState;
+          final size = hoveredWidget?.size;
+          final target = hoveredWidget?.offset;
+          final effectiveDecoration = hoveredWidget?.widget.tooltipDecoration ??
+              widget.tooltipDecoration ??
+              SmoothHoverScope.defaultTooltipDecoration;
+          final effectivePhysics = hoveredWidget?.widget.tooltipPhysics ??
+              widget.tooltipPhysics ??
+              SmoothHoverScope.defaultPhysics;
+          return _Tooltip(
+            childSize: size,
+            target: target,
+            decoration: effectiveDecoration,
+            physics: effectivePhysics,
+            text: hoveredWidget?.widget.tooltipText,
+            span: hoveredWidget?.widget.tooltipSpan,
+            delay: hoveredWidget?.widget.tooltipDelay ??
+                widget.tooltipDelay ??
+                Duration.zero,
+            animationDuration: hoveredWidget?.widget.tooltipAnimationDuration ??
+                widget.tooltipAnimationDuration,
+          );
+        }),
       ],
     );
   }
@@ -172,12 +251,14 @@ class _Ink extends StatefulWidget {
     required this.target,
     required this.decoration,
     required this.physics,
+    required this.animationDuration,
   });
 
   final Size? size;
   final Offset? target;
   final Decoration decoration;
   final Physics? physics;
+  final Duration? animationDuration;
 
   @override
   State<_Ink> createState() => _InkState();
@@ -224,15 +305,19 @@ class _InkState extends State<_Ink> {
         }
       });
     }
-    return APositioned(
+    return AnimatedPositioned(
       left: effectiveLeft,
       top: effectiveTop,
+      curve: widget.physics ?? Spring.elegant,
+      duration: widget.animationDuration ?? Duration(milliseconds: 450),
       child: ASizedBox(
         width: effectiveWidth,
         height: effectiveHeight,
         physics: widget.physics,
+        duration: widget.animationDuration,
         child: AContainer(
           physics: widget.physics,
+          duration: widget.animationDuration,
           decoration: uncertain
               ? () {
                   if (widget.decoration case final ShapeDecoration dec) {
@@ -282,6 +367,7 @@ class _Tooltip extends StatefulWidget {
     required this.text,
     required this.span,
     required this.delay,
+    required this.animationDuration,
   });
 
   final Size? childSize;
@@ -291,6 +377,7 @@ class _Tooltip extends StatefulWidget {
   final String? text;
   final InlineSpan? span;
   final Duration delay;
+  final Duration? animationDuration;
 
   @override
   State<_Tooltip> createState() => __TooltipState();
@@ -336,15 +423,18 @@ class __TooltipState extends State<_Tooltip> {
     return APositioned(
       left: effectiveLeft,
       top: effectiveTop,
+      physics: widget.physics,
+      duration: widget.animationDuration,
       child: Align(
         widthFactor: 0.0,
         heightFactor: 0.0,
         child: AContainer(
           physics: widget.physics,
           decoration: widget.decoration,
+          duration: widget.animationDuration,
           padding: noText ? EdgeInsets.zero : EdgeInsets.all(8.0),
           child: AnimatedSwitcher(
-            duration: Duration(milliseconds: 300),
+            duration: widget.animationDuration ?? Duration(milliseconds: 300),
             switchInCurve: Curves.easeInOut,
             switchOutCurve: Curves.easeInOut,
             transitionBuilder: (child, animation) {
@@ -361,6 +451,35 @@ class __TooltipState extends State<_Tooltip> {
                   opacity: animation,
                   child: child,
                 ),
+              );
+            },
+            layoutBuilder: (currentChild, previousChildren) {
+              return Stack(
+                alignment: Alignment.center,
+                children: <Widget>[
+                  Visibility(
+                    maintainSize: true,
+                    maintainAnimation: true,
+                    maintainState: true,
+                    child: AnimatedSize(
+                      duration: widget.animationDuration ??
+                          Duration(milliseconds: 300),
+                      curve: Curves.easeInCubic,
+                      child: currentChild,
+                    ),
+                  ),
+                  Align(
+                    widthFactor: 0.0,
+                    heightFactor: 0.0,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: <Widget>[
+                        ...previousChildren,
+                        if (currentChild != null) currentChild,
+                      ],
+                    ),
+                  ),
+                ],
               );
             },
             child: Text.rich(

@@ -70,10 +70,12 @@ class SmoothHover extends StatefulWidget {
     this.onFocusChange,
     this.inkDecoration,
     this.inkPhysics,
+    this.inkAnimationDuration,
     this.tooltipText,
     this.tooltipSpan,
     this.tooltipDecoration,
     this.tooltipPhysics,
+    this.tooltipAnimationDuration,
     this.tooltipDelay = const Duration(milliseconds: 1000),
     this.cursor = MouseCursor.defer,
     this.opaque = true,
@@ -85,9 +87,18 @@ class SmoothHover extends StatefulWidget {
     this.shortcuts,
     this.builder,
     this.child,
-  }) : assert(
+  })  : assert(
           builder != null || child != null,
           'Either builder or child must be provided',
+        ),
+        assert(
+          inkAnimationDuration != null || inkPhysics is PhysicsSimulation?,
+          'inkAnimationDuration must be provided if inkPhysics is not a PhysicsSimulation',
+        ),
+        assert(
+          tooltipAnimationDuration != null ||
+              tooltipPhysics is PhysicsSimulation?,
+          'tooltipAnimationDuration must be provided if tooltipPhysics is not a PhysicsSimulation',
         );
 
   /// Whether this widget should be focused initially.
@@ -147,6 +158,18 @@ class SmoothHover extends StatefulWidget {
   ///
   /// If null, default physics will be used.
   final Physics? tooltipPhysics;
+
+  /// The duration of the ink animation.
+  ///
+  /// If null, the duration from the nearest [SmoothHoverScope] ancestor will be used.
+  /// If that is also null, a default duration will be used.
+  final Duration? inkAnimationDuration;
+
+  /// The duration of the tooltip animation.
+  ///
+  /// If null, the duration from the nearest [SmoothHoverScope] ancestor will be used.
+  /// If that is also null, a default duration will be used.
+  final Duration? tooltipAnimationDuration;
 
   /// Called when the pointer enters the widget's bounds.
   final ValueChanged<PointerEnterEvent>? onEnter;
